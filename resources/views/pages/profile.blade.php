@@ -6,8 +6,8 @@
   <v-main class="blue-grey lighten-5">
     <v-container fluid >
       <v-row justify="center">
-        <v-col cols="8">
-          <news-feed></news-feed>
+        <v-col cols="12">
+          <profile></profile>
         </v-col>
       </v-row>
     </v-container>

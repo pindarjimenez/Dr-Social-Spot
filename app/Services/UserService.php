@@ -6,6 +6,7 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserInformationRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Auth;
 
 class UserService
 {
@@ -29,12 +30,6 @@ class UserService
         $this->userInformationRepository = $userInformationRepository;
     }
 
-    /**
-     * create user
-     *
-     * @param $data
-     * @throws \Exception
-     */
     public function create($data)
     {
         $data['password'] = Hash::make($data['password']);
@@ -51,34 +46,31 @@ class UserService
         try {
             return DB::transaction(function () use ($data) {
                 
-                $id = $data['id'];
-
-                $user = [
+                $this->userRepository->update([
                     'name' => $data['name'],
-                    'email' => $data['email'],
-                ]; 
-
-                $this->userRepository->update($user, $id);
-
-                $detail = $this->userInformationRepository->where('user_id', $id)->first();
-                $detail->update([
-                    'mobile' => $data['mobile'],
-                    'gender' => $data['gender'],
-                    'birthdate' => $data['birthdate'],
-                    'address' => $data['address'],
-                    'age' => $data['age']
-                ]);
+                ], Auth::user()->id);
+                
+                $this->userInformationRepository
+                    ->updateOrCreate(
+                        [
+                            'user_id' => Auth::user()->id,
+                        ],
+                        [
+                            'mobile' => $data['mobile'],
+                            'gender' => $data['gender'],
+                            'birthdate' => $data['birthdate'],
+                            'address' => $data['address'],
+                            'age' => $data['age']
+                        ]
+                    );
+                
+                return true;
             });
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
         }
     }
 
-    /**
-     * @param $email
-     * @param $password
-     * @return mixed|null
-     */
     public function userLogin($email, $password)
     {
         $user = $this->userRepository
@@ -90,5 +82,10 @@ class UserService
         }
 
         return null;
+    }
+
+    public function getInformation()
+    {
+        return $this->userRepository->with(['information'])->find(Auth::user()->id);
     }
 }
